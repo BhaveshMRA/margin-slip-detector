@@ -354,7 +354,7 @@ git push origin feature/your-feature
 ```
 
 ---
-
+Kumar Saurabh Info
 **GitHub:** [github.com/smitsaurabh](https://github.com/smitsaurabh)  
 **Portfolio:** [smitsaurabh.github.io/kumarsaurabh](https://smitsaurabh.github.io/kumarsaurabh/)
 
