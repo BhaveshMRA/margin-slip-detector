@@ -3,9 +3,8 @@
 > Live P&L forecasting, governance alerts, and action playbooks for professional services teams.  
 > Built with the Rocketlane RLI framework · Claude AI (Anthropic) · Nitro signals
 
-**Author:** Kumar Saurabh — AI Software Engineer  
-**GitHub:** [github.com/smitsaurabh](https://github.com/smitsaurabh)  
-**Portfolio:** [smitsaurabh.github.io/kumarsaurabh](https://smitsaurabh.github.io/kumarsaurabh/)
+**Authors:** Kumar Saurabh & Bhavesh Maurya
+
 
 ---
 
@@ -356,6 +355,6 @@ git push origin feature/your-feature
 
 ---
 
-## License
+**GitHub:** [github.com/smitsaurabh](https://github.com/smitsaurabh)  
+**Portfolio:** [smitsaurabh.github.io/kumarsaurabh](https://smitsaurabh.github.io/kumarsaurabh/)
 
-MIT © Kumar Saurabh 2026
