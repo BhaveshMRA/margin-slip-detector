@@ -1,0 +1,91 @@
+{
+  "widgets": [
+    {
+      "entrypoint": {
+        "html": "widgets/margin-slip-detector/index.html"
+      },
+      "widgetName": "Margin Slip Detector",
+      "widgetDescription": "Live P&L forecasting — EAC, forecast margin, risk signals, governance alerts, and action playbooks for this project.",
+      "widgetIdentifier": "margin-slip-detector",
+      "logo": "widgets/margin-slip-detector/logo.png",
+      "supportedLocations": {
+        "locations": [
+          "left_nav"
+        ]
+      }
+    }
+  ],
+  "serverMethods": [
+    {
+      "serverMethodName": "getMarginForecast",
+      "description": "Fetches all projects from Rocketlane, computes EAC, forecast margin, risk level, and signals for each project. Returns a sorted portfolio object ready for the widget to render."
+    },
+    {
+      "serverMethodName": "callClaude",
+      "description": "Calls the Anthropic Claude API to generate risk briefs and action plans."
+    }
+  ],
+  "version": "1.0.2",
+  "installationFields": [
+    {
+      "name": "billableRate",
+      "label": "Billable rate ($/hour)",
+      "type": "NUMBER",
+      "required": false,
+      "rerenderAllFields": false,
+      "defaultValue": 150,
+      "secure": false,
+      "hidden": false,
+      "metaData": {
+        "range": {
+          "min": 50,
+          "max": 500
+        }
+      }
+    },
+    {
+      "name": "costRate",
+      "label": "Cost rate ($/hour)",
+      "type": "NUMBER",
+      "required": false,
+      "rerenderAllFields": false,
+      "defaultValue": 100,
+      "secure": false,
+      "hidden": false,
+      "metaData": {
+        "range": {
+          "min": 30,
+          "max": 400
+        }
+      }
+    },
+    {
+      "name": "targetMargin",
+      "label": "Target margin (%)",
+      "type": "NUMBER",
+      "required": false,
+      "rerenderAllFields": false,
+      "defaultValue": 20,
+      "secure": false,
+      "hidden": false,
+      "metaData": {
+        "range": {
+          "min": 5,
+          "max": 60
+        }
+      }
+    },
+    {
+      "name": "anthropicApiKey",
+      "label": "Anthropic API Key",
+      "type": "TEXT",
+      "required": false,
+      "rerenderAllFields": false,
+      "defaultValue": "",
+      "secure": true,
+      "hidden": false
+    }
+  ],
+  "isCustomEventHandlerPresent": false,
+  "appEvents": []
+}

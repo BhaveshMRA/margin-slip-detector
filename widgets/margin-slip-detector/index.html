@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Margin Slip Detector</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:#1a1a1a;background:#f8f8f7;min-height:100vh}
+.app{padding:16px;max-width:900px;margin:0 auto}
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;background:#fff;padding:12px 16px;border-radius:10px;border:1px solid #e8e8e5}
+.hdr-left h1{font-size:15px;font-weight:600;color:#111}
+.hdr-left p{font-size:11px;color:#888;margin-top:2px}
+.live{font-size:10px;padding:3px 9px;border-radius:20px;background:#e6f4ed;color:#1a7a45;font-weight:600;border:1px solid #b8dfc9}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
+.kpi{background:#fff;border-radius:8px;padding:10px 12px;border:1px solid #e8e8e5}
+.kpi-l{font-size:10px;color:#888;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.kpi-v{font-size:20px;font-weight:600;color:#111}
+.kpi-s{font-size:10px;color:#aaa;margin-top:2px}
+.tabs{display:flex;gap:0;border-bottom:1px solid #e8e8e5;margin-bottom:14px}
+.tab{font-size:12px;padding:8px 14px;cursor:pointer;color:#888;border-bottom:2px solid transparent;display:flex;align-items:center;gap:5px;transition:all .15s}
+.tab:hover{color:#333}
+.tab.active{color:#3b72f0;border-bottom-color:#3b72f0;font-weight:600}
+.tab-ct{font-size:10px;padding:1px 6px;border-radius:20px;font-weight:600}
+.ct-red{background:#fde8e8;color:#b91c1c}
+.ct-amb{background:#fef3c7;color:#92400e}
+.pane{display:none}
+.pane.active{display:block}
+.toolbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
+.toolbar label{font-size:11px;color:#888}
+.toolbar select{font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid #e0e0da;background:#fff;color:#333}
+.tbl-wrap{background:#fff;border-radius:10px;border:1px solid #e8e8e5;overflow:hidden;margin-bottom:14px}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+thead th{background:#f5f5f2;padding:8px 10px;text-align:left;font-weight:600;color:#666;font-size:11px;border-bottom:1px solid #e8e8e5;text-transform:uppercase;letter-spacing:.03em}
+tbody tr{border-bottom:1px solid #f0f0ec;cursor:pointer;transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#fafaf8}
+tbody tr.sel{background:#eff4ff}
+td{padding:8px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#333}
+.pill{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
+.p-c{background:#fde8e8;color:#b91c1c}
+.p-h{background:#fef3c7;color:#92400e}
+.p-m{background:#e0f2f1;color:#0f6e56}
+.p-l{background:#e8f5e9;color:#2e7d32}
+.p-n{background:#f5f5f2;color:#888}
+.bar-t{height:4px;background:#f0f0ec;border-radius:2px;margin-top:3px;min-width:40px}
+.bar-f{height:100%;border-radius:2px}
+.detail{background:#fff;border-radius:10px;border:1px solid #e8e8e5;padding:14px;margin-bottom:14px}
+.d-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.d-title{font-size:13px;font-weight:600;color:#111}
+.meta-r{display:flex;gap:12px;font-size:11px;color:#888;margin-bottom:10px;flex-wrap:wrap}
+.meta-r b{color:#333;font-weight:600}
+.sig-list{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.sig{display:flex;align-items:flex-start;gap:7px;padding:7px 9px;border-radius:7px;font-size:11px;line-height:1.4}
+.sig-d{background:#fde8e8;color:#7f1d1d}
+.sig-w{background:#fef3c7;color:#78350f}
+.sig-o{background:#e8f5e9;color:#1b5e20}
+.sig-icon{font-size:13px;flex-shrink:0;margin-top:1px}
+.ai-box{border-top:1px solid #f0f0ec;padding-top:10px}
+.ai-lbl{font-size:10px;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:5px}
+.ai-txt{font-size:12px;color:#333;line-height:1.6;background:#f8f8f7;border-radius:7px;padding:9px 11px;min-height:40px;border:1px solid #e8e8e5}
+.ai-dim{color:#aaa;font-style:italic}
+.btns{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.btn{font-size:11px;padding:5px 11px;border-radius:7px;border:1px solid #e0e0da;background:#fff;color:#333;cursor:pointer;transition:background .12s}
+.btn:hover{background:#f5f5f2}
+/* governance */
+.gov-s{margin-bottom:16px}
+.gov-ttl{font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.ac{border-radius:10px;margin-bottom:8px;overflow:hidden;border:1px solid #e8e8e5;background:#fff}
+.ac-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;gap:8px}
+.ac-hdr:hover{background:#fafaf8}
+.ac-left{display:flex;align-items:center;gap:8px;min-width:0;flex:1}
+.ac-name{font-size:12px;font-weight:600;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ac-sub{font-size:10px;color:#888;white-space:nowrap;flex-shrink:0}
+.chev{font-size:12px;color:#aaa;transition:transform .2s;flex-shrink:0}
+.chev.open{transform:rotate(180deg)}
+.ac-body{display:none;padding:12px 14px;border-top:1px solid #f0f0ec;background:#fafaf8}
+.ac-body.open{display:block}
+.notif-box{border-radius:7px;padding:9px 12px;font-size:11px;line-height:1.5;margin-bottom:10px}
+.nb-c{background:#fde8e8;border-left:3px solid #b91c1c;color:#450a0a}
+.nb-h{background:#fef3c7;border-left:3px solid #d97706;color:#451a03}
+.nb-lbl{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;opacity:.7}
+.act-list{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.act-item{display:flex;align-items:flex-start;gap:8px;padding:7px 9px;border-radius:7px;font-size:11px;line-height:1.4;background:#fff;border:1px solid #e8e8e5}
+.act-n{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;margin-top:1px}
+.n-r{background:#fde8e8;color:#b91c1c}
+.n-a{background:#fef3c7;color:#92400e}
+.n-t{background:#e0f2f1;color:#0f6e56}
+.act-when{font-size:9px;color:#aaa;margin-left:5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.act-body{color:#333}
+.act-desc{font-size:10px;color:#666;margin-top:2px}
+.gov-ai{border-top:1px solid #e8e8e5;padding-top:9px;margin-top:4px}
+.gov-ai-txt{font-size:11px;line-height:1.6;color:#333;background:#fff;border-radius:7px;padding:8px 10px;border:1px solid #e8e8e5;min-height:34px}
+/* notifications */
+.nf-feed{display:flex;flex-direction:column;gap:8px}
+.nf-item{background:#fff;border-radius:10px;border:1px solid #e8e8e5;overflow:hidden}
+.nf-strip{display:flex;align-items:flex-start;gap:10px;padding:10px 14px}
+.nf-sc{border-left:3px solid #b91c1c}
+.nf-sh{border-left:3px solid #d97706}
+.nf-ico{font-size:15px;flex-shrink:0;margin-top:1px}
+.nf-cnt{flex:1;min-width:0}
+.nf-proj{font-size:12px;font-weight:600;color:#111;margin-bottom:2px}
+.nf-msg{font-size:11px;color:#666;line-height:1.4}
+.nf-time{font-size:10px;color:#aaa;margin-top:3px}
+.nf-acts{display:flex;gap:6px;padding:8px 14px;background:#f8f8f7;border-top:1px solid #f0f0ec;flex-wrap:wrap}
+.nf-btn{font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #e0e0da;background:#fff;color:#333;cursor:pointer}
+.nf-btn:hover{background:#f5f5f2}
+.nf-btn-p{background:#eff4ff;color:#3b72f0;border-color:#c7d7fd}
+.loading{text-align:center;padding:2rem;color:#aaa;font-size:13px}
+.err{background:#fde8e8;color:#7f1d1d;padding:12px;border-radius:8px;font-size:12px;margin:10px 0}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hdr">
+    <div class="hdr-left">
+      <h1>&#x1F4CA; Margin Slip Detector</h1>
+      <p>Live P&amp;L forecasting &middot; Governance &middot; Action playbooks</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="live">&#9679; Live</span>
+      <button class="btn" id="refresh-btn" onclick="loadData()">&#8635; Refresh</button>
+    </div>
+  </div>
+
+  <div class="kpis" id="kpis"><div class="loading">Loading portfolio...</div></div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('portfolio',this)">&#x1F4CB; Portfolio</div>
+    <div class="tab" onclick="switchTab('governance',this)">&#x1F6E1; Governance <span class="tab-ct ct-red" id="gov-ct">0</span></div>
+    <div class="tab" onclick="switchTab('notifications',this)">&#x1F514; Notifications <span class="tab-ct ct-amb" id="nf-ct">0</span></div>
+  </div>
+
+  <div class="pane active" id="pane-portfolio">
+    <div class="toolbar">
+      <label>Filter:</label>
+      <select id="f-status" onchange="applyFilters()">
+        <option value="">All statuses</option>
+        <option value="In progress">In progress</option>
+        <option value="Proposed">Proposed</option>
+        <option value="Completed">Completed</option>
+      </select>
+      <select id="f-risk" onchange="applyFilters()">
+        <option value="">All risks</option>
+        <option value="critical">Critical</option>
+        <option value="high">High risk</option>
+        <option value="medium">Medium</option>
+        <option value="low">On track</option>
+      </select>
+      <select id="f-sort" onchange="applyFilters()">
+        <option value="risk">Sort: Risk (worst first)</option>
+        <option value="fee">Sort: Fee (largest first)</option>
+        <option value="margin">Sort: Margin (lowest first)</option>
+      </select>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:33%">Project</th>
+          <th style="width:13%">Status</th>
+          <th style="width:12%">Risk</th>
+          <th style="width:16%">Budget burn</th>
+          <th style="width:13%">Margin fcst</th>
+          <th style="width:13%">Fee</th>
+        </tr></thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+    </div>
+    <div id="detail-panel"></div>
+  </div>
+
+  <div class="pane" id="pane-governance">
+    <div id="gov-content"><div class="loading">Loading governance data...</div></div>
+  </div>
+
+  <div class="pane" id="pane-notifications">
+    <div class="nf-feed" id="nf-feed"><div class="loading">Loading alerts...</div></div>
+  </div>
+</div>
+
+<script>
+// ─── DEV MODE MOCK ────────────────────────────────────────────────────────────
+// Provides window.rocketlaneApp when running via `rli dev` on localhost.
+// The real Rocketlane SDK requires the platform iframe context to initialise.
+// This mock runs the full risk-model client-side against realistic fake data.
+;(function () {
+  if (typeof window !== 'undefined' && !window._rlMockInstalled) {
+    window._rlMockInstalled = true;
+
+    const MOCK_PROJECTS = [
+      // ── CRITICAL ──────────────────────────────────────────────────────────
+      { projectId:'p1', projectName:'Acme Corp - Digital Transformation Suite', status:'In progress', contractType:'FIXED_FEE', fee:185000, budgetedHours:800, trackedHours:750, billableHours:680, progressPercentage:45, ageDays:110, plannedDays:140, customer:{companyName:'Acme Corp'}, owner:{firstName:'Sarah',lastName:'Chen'}, allocatedHours:2600, financials:{contractType:'FIXED_FEE',metrics:{actualProfitMargin:12}} },
+      { projectId:'p2', projectName:'TechFlow - Platform Migration', status:'In progress', contractType:'FIXED_FEE', fee:95000, budgetedHours:500, trackedHours:450, billableHours:390, progressPercentage:40, ageDays:90, plannedDays:120, customer:{companyName:'TechFlow Inc'}, owner:{firstName:'Marcus',lastName:'Webb'}, allocatedHours:560, financials:{contractType:'FIXED_FEE',metrics:{actualProfitMargin:8}} },
+      // ── HIGH ──────────────────────────────────────────────────────────────
+      { projectId:'p7', projectName:'Orbit SaaS - API Modernization', status:'In progress', contractType:'TIME_AND_MATERIAL', fee:210000, budgetedHours:1400, trackedHours:420, billableHours:395, progressPercentage:35, ageDays:80, plannedDays:130, customer:{companyName:'Orbit SaaS'}, owner:{firstName:'Aisha',lastName:'Johnson'}, allocatedHours:1420, financials:{contractType:'TIME_AND_MATERIAL',metrics:{actualProfitMargin:32}} },
+      { projectId:'p8', projectName:'Cascade Retail - Omnichannel Launch', status:'In progress', contractType:'FIXED_FEE', fee:92000, budgetedHours:600, trackedHours:180, billableHours:165, progressPercentage:28, ageDays:50, plannedDays:90, customer:{companyName:'Cascade Retail'}, owner:{firstName:'Daniel',lastName:'Kim'}, allocatedHours:610, financials:{contractType:'FIXED_FEE',metrics:{actualProfitMargin:30}} },
+      { projectId:'p13', projectName:'Aurora Fintech - Payment Gateway', status:'In progress', contractType:'FIXED_FEE', fee:130000, budgetedHours:800, trackedHours:350, billableHours:330, progressPercentage:50, ageDays:100, plannedDays:130, customer:{companyName:'Aurora Fintech'}, owner:{firstName:'Maya',lastName:'Patel'}, allocatedHours:820, financials:{contractType:'FIXED_FEE',metrics:{actualProfitMargin:20}} },
+      // ── MEDIUM ────────────────────────────────────────────────────────────
+      { projectId:'p4', projectName:'Nexus Analytics - BI Dashboard', status:'In progress', contractType:'FIXED_FEE', fee:78000, budgetedHours:600, trackedHours:420, billableHours:320, progressPercentage:60, ageDays:80, plannedDays:100, customer:{companyName:'Nexus Analytics'}, owner:{firstName:'James',lastName:'Park'}, allocatedHours:620, financials:{contractType:'FIXED_FEE',metrics:{actualProfitMargin:28}} },
+      { projectId:'p5', projectName:'Vertex Capital - CRM Integration', status:'In progress', contractType:'FIXED_FEE', fee:145000, budgetedHours:900, trackedHours:620, billableHours:480, progressPercentage:65, ageDays:85, plannedDays:110, customer:{companyName:'Vertex Capital'}, owner:{firstName:'Emma',lastName:'Torres'}, allocatedHours:950, financials:{contractType:'FIXED_FEE',metrics:{actualProfitMargin:19}} },
+      { projectId:'p6', projectName:'Pioneer Bank - Digital Onboarding', status:'In progress', contractType:'TIME_AND_MATERIAL', fee:195000, budgetedHours:1100, trackedHours:920, billableHours:845, progressPercentage:72, ageDays:130, plannedDays:160, customer:{companyName:'Pioneer Bank'}, owner:{firstName:'Nathan',lastName:'Mills'}, allocatedHours:1150, financials:{contractType:'TIME_AND_MATERIAL',metrics:{actualProfitMargin:24}} },
+      { projectId:'p9', projectName:'Meridian Pharma - Data Lake Setup', status:'In progress', contractType:'FIXED_FEE', fee:55000, budgetedHours:400, trackedHours:280, billableHours:195, progressPercentage:62, ageDays:90, plannedDays:120, customer:{companyName:'Meridian Pharma'}, owner:{firstName:'Lily',lastName:'Zhang'}, allocatedHours:410, financials:{contractType:'FIXED_FEE',metrics:{actualProfitMargin:26}} },
+      { projectId:'p14', projectName:'Zenith Media - Content Platform', status:'In progress', contractType:'TIME_AND_MATERIAL', fee:72000, budgetedHours:450, trackedHours:280, billableHours:255, progressPercentage:58, ageDays:60, plannedDays:80, customer:{companyName:'Zenith Media'}, owner:{firstName:'Sophie',lastName:'Dumont'}, allocatedHours:460, financials:{contractType:'TIME_AND_MATERIAL',metrics:{actualProfitMargin:18}} },
+      // ── LOW / ON TRACK ────────────────────────────────────────────────────
+      { projectId:'p3', projectName:'Horizon Health - EHR Implementation', status:'In progress', contractType:'TIME_AND_MATERIAL', fee:320000, budgetedHours:2000, trackedHours:800, billableHours:720, progressPercentage:70, ageDays:150, plannedDays:200, customer:{companyName:'Horizon Health'}, owner:{firstName:'Priya',lastName:'Nair'}, allocatedHours:2100, financials:{contractType:'TIME_AND_MATERIAL',metrics:{actualProfitMargin:22}} },
+      { projectId:'p10', projectName:'Titan Manufacturing - IoT Deployment', status:'In progress', contractType:'FIXED_FEE', fee:275000, budgetedHours:1800, trackedHours:480, billableHours:455, progressPercentage:25, ageDays:60, plannedDays:200, customer:{companyName:'Titan Manufacturing'}, owner:{firstName:'Chris',lastName:'Okafor'}, allocatedHours:1850, financials:{contractType:'FIXED_FEE',metrics:{actualProfitMargin:31}} },
+      { projectId:'p11', projectName:'Stratos Logistics - Route Optimization', status:'Completed', contractType:'TIME_AND_MATERIAL', fee:88000, budgetedHours:550, trackedHours:520, billableHours:498, progressPercentage:100, ageDays:125, plannedDays:120, customer:{companyName:'Stratos Logistics'}, owner:{firstName:'Tom',lastName:'Bradley'}, allocatedHours:0, financials:{contractType:'TIME_AND_MATERIAL',metrics:{actualProfitMargin:29}} },
+      { projectId:'p15', projectName:'Fulcrum Energy - Regulatory Compliance', status:'Proposed', contractType:'FIXED_FEE', fee:55000, budgetedHours:350, trackedHours:0, billableHours:0, progressPercentage:0, ageDays:5, plannedDays:60, customer:{companyName:'Fulcrum Energy'}, owner:{firstName:'Robert',lastName:'Singh'}, allocatedHours:0, financials:{contractType:'FIXED_FEE',metrics:{actualProfitMargin:0}} },
+      // ── NON-BILLABLE ──────────────────────────────────────────────────────
+      { projectId:'p12', projectName:'Nimbus Cloud - Internal Security Audit', status:'In progress', contractType:'NON_BILLABLE', fee:0, budgetedHours:200, trackedHours:120, billableHours:0, progressPercentage:60, ageDays:40, plannedDays:50, customer:{companyName:'Nimbus Cloud'}, owner:{firstName:'Grace',lastName:'Liu'}, allocatedHours:0, financials:{contractType:'NON_BILLABLE',metrics:{actualProfitMargin:0}} },
+    ];
+
+    function runRiskModel(projects, iparams) {
+      const HR = Number(iparams.billableRate) || 72;
+      const HC = Number(iparams.costRate) || 51;
+      const TM = Number(iparams.targetMargin) || 25;
+      const RANK = { critical:4, high:3, medium:2, low:1, none:0 };
+
+      const scored = projects.map(function(p) {
+        var budget = p.budgetedHours||0, tracked = p.trackedHours||0, billable = p.billableHours||0;
+        var progress = p.progressPercentage||0, fee = p.fee||0;
+        var ageDays = p.ageDays||0, plannedDays = p.plannedDays||1;
+        var status = (p.status&&p.status.label)||p.status||'Unknown';
+        var ct = (p.financials&&p.financials.contractType)||p.contractType||'UNKNOWN';
+        var allocH = p.allocatedHours||0;
+        var eac = tracked>0&&progress>0 ? (tracked/progress)*100 : budget;
+        var projCost = eac*HC;
+        var projRev = ct==='FIXED_FEE' ? fee : ct==='TIME_AND_MATERIAL' ? eac*HR : 0;
+        var fcastMargin = projRev>0 ? ((projRev-projCost)/projRev)*100 : 0;
+        var burnRate = budget>0 ? (tracked/budget)*100 : 0;
+        var elapsed = Math.min((ageDays/plannedDays)*100,100);
+        var velGap = elapsed-progress;
+        var overrun = budget>0 ? ((eac-budget)/budget)*100 : 0;
+        var billR = tracked>0 ? (billable/tracked)*100 : 100;
+        var allocX = allocH>0&&budget>0 ? allocH/budget : 0;
+        var signals = [], level = 'low';
+
+        if (ct==='NON_BILLABLE') {
+          signals.push({type:'ok',msg:'Non-billable — margin tracking N/A'});
+          return {projectId:p.projectId,projectName:p.projectName,status,contractType:ct,fee,budgetedHours:budget,trackedHours:tracked,billableHours:billable,progressPct:progress,projectFee:fee,ageDays,plannedDays,customer:(p.customer&&p.customer.companyName)||'',owner:((p.owner&&p.owner.firstName)||'')+' '+((p.owner&&p.owner.lastName)||''),_risk:{level:'none',signals,eac,fcastMargin,burnRate,velGap,overrun,billR,projRev,projCost,allocatedHours:allocH,hourlyRate:HR,hourlyCost:HC}};
+        }
+        if (allocX>3) { signals.push({type:'danger',msg:'Allocation '+Math.round(allocH)+'h is '+Math.round(allocX)+'× budget ('+budget+'h) — scope explosion'}); level='critical'; }
+        if (overrun>20) { signals.push({type:'danger',msg:'EAC '+Math.round(eac)+'h vs budget '+budget+'h (+'+overrun.toFixed(0)+'%) — hours overrun'}); level='critical'; }
+        else if (overrun>8) { signals.push({type:'warn',msg:'Hour creep '+overrun.toFixed(0)+'% above budget trajectory'}); if(level==='low')level='medium'; }
+        if (velGap>25) { signals.push({type:'danger',msg:'Schedule slipping '+velGap.toFixed(0)+'% — elapsed vs progress gap'}); if(level!=='critical')level='high'; }
+        else if (velGap>12) { signals.push({type:'warn',msg:'Velocity slowing: '+velGap.toFixed(0)+'% time vs progress gap'}); if(level==='low')level='medium'; }
+        if (fcastMargin<TM&&projRev>0&&status!=='Completed') { signals.push({type:'danger',msg:'Forecast margin '+fcastMargin.toFixed(1)+'% below '+TM+'% target'}); if(level!=='critical')level='high'; }
+        if (billR<70&&tracked>10) { signals.push({type:'warn',msg:'Billable ratio '+billR.toFixed(0)+'% — non-billable eroding margin'}); if(level==='low')level='medium'; }
+        if (status==='In progress'&&tracked===0&&ageDays>14) { signals.push({type:'warn',msg:'Zero time logged after '+ageDays+' days — true burn hidden'}); if(level==='low')level='medium'; }
+        if (signals.length===0) signals.push({type:'ok',msg:'No margin slip signals — tracking healthy'});
+        return {projectId:p.projectId,projectName:p.projectName,status,contractType:ct,fee,budgetedHours:budget,trackedHours:tracked,billableHours:billable,progressPct:progress,projectFee:fee,ageDays,plannedDays,customer:(p.customer&&p.customer.companyName)||'',owner:(((p.owner&&p.owner.firstName)||'')+' '+((p.owner&&p.owner.lastName)||'')).trim(),_risk:{level,signals,eac,fcastMargin,burnRate,velGap,overrun,billR,projRev,projCost,allocatedHours:allocH,hourlyRate:HR,hourlyCost:HC}};
+      });
+
+      scored.sort(function(a,b){ return (RANK[b._risk.level]-RANK[a._risk.level])||((b.fee||0)-(a.fee||0)); });
+      var atRisk = scored.filter(function(p){return['critical','high'].includes(p._risk.level);}).length;
+      var portfolioValue = scored.reduce(function(s,p){return s+(p.fee||0);},0);
+      var margins = scored.filter(function(p){return p._risk.fcastMargin>0&&p._risk.fcastMargin<200&&p._risk.level!=='none';});
+      var avgMargin = margins.length ? margins.reduce(function(s,p){return s+p._risk.fcastMargin;},0)/margins.length : 0;
+      return {success:true,summary:{total:scored.length,atRisk,portfolioValue,avgMargin:parseFloat(avgMargin.toFixed(1)),targetMargin:TM},projects:scored};
+    }
+
+    // Install mock — only active in dev (localhost)
+    var iparams = { billableRate:72, costRate:51, targetMargin:25 };
+    try {
+      var stored = JSON.parse(localStorage.getItem('_rli_iparams')||'{}');
+      iparams = Object.assign(iparams, stored);
+    } catch(e){}
+
+    window.rocketlaneApp = {
+      init: function() {
+        return Promise.resolve({
+          serverAction: function(name, payload) {
+            if (name==='getMarginForecast') return Promise.resolve(runRiskModel(MOCK_PROJECTS, iparams));
+            if (name==='callClaude') {
+              return fetch('/server-actions/callClaude/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ payload: payload || {} })
+              })
+              .then(res => res.json())
+              .then(data => {
+                if (data.success) {
+                  return data.response;
+                } else {
+                  return { success: false, error: data.errors?.[0]?.message || 'Server action failed' };
+                }
+              })
+              .catch(err => ({ success: false, error: err.message }));
+            }
+            return Promise.resolve({success:false,error:'Unknown action: '+name});
+          }
+        });
+      },
+      openChat: function(prompt) { alert('AI Prompt:\n\n'+prompt); }
+    };
+    console.info('%c[RLI DEV MOCK] window.rocketlaneApp installed — 15 mock projects loaded','color:#3b72f0;font-weight:bold');
+  }
+})();
+</script>
+<script src="https://rli-sdk.s3.us-east-1.amazonaws.com/index.js" id="rocketlane-sdk"></script>
+<script>
+const HR=150,HC=100,TARGET=20;
+let ALL=[],filtered=[],activeRow=null,activeId=null,rlClient=null;
+const RANK={critical:4,high:3,medium:2,low:1,none:0};
+
+function rm(l){
+  if(l==='critical')return{label:'Critical',cls:'p-c'};
+  if(l==='high')return{label:'High risk',cls:'p-h'};
+  if(l==='medium')return{label:'Medium',cls:'p-m'};
+  if(l==='none')return{label:'N/A',cls:'p-n'};
+  return{label:'On track',cls:'p-l'};
+}
+
+function buildKPIs(data){
+  const s=data.summary||{};
+  window.targetMargin = s.targetMargin || 20;
+  document.getElementById('kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-l">Projects</div><div class="kpi-v">${s.total||0}</div><div class="kpi-s">portfolio</div></div>
+    <div class="kpi"><div class="kpi-l">Critical/high</div><div class="kpi-v" style="color:#b91c1c">${s.atRisk||0}</div><div class="kpi-s">need attention</div></div>
+    <div class="kpi"><div class="kpi-l">Portfolio value</div><div class="kpi-v">$${((s.portfolioValue||0)/1e6).toFixed(1)}M</div><div class="kpi-s">total fees</div></div>
+    <div class="kpi"><div class="kpi-l">Avg margin fcst</div><div class="kpi-v" style="color:${(s.avgMargin||0)<(s.targetMargin||20)?'#b91c1c':'#2e7d32'}">${(s.avgMargin||0).toFixed(1)}%</div><div class="kpi-s">active projects</div></div>
+    <div class="kpi"><div class="kpi-l">Target margin</div><div class="kpi-v">${s.targetMargin||20}%</div><div class="kpi-s">configured</div></div>`;
+  document.getElementById('gov-ct').textContent=ALL.filter(p=>['critical','high','medium'].includes(p._risk.level)).length;
+  document.getElementById('nf-ct').textContent=ALL.filter(p=>['critical','high'].includes(p._risk.level)).length;
+}
+
+function applyFilters(){
+  const st=document.getElementById('f-status').value;
+  const rk=document.getElementById('f-risk').value;
+  const so=document.getElementById('f-sort').value;
+  filtered=ALL.filter(p=>{
+    if(st&&p.status!==st)return false;
+    if(rk&&p._risk.level!==rk)return false;
+    return true;
+  });
+  if(so==='risk')filtered.sort((a,b)=>RANK[b._risk.level]-RANK[a._risk.level]||(b.fee-a.fee));
+  else if(so==='fee')filtered.sort((a,b)=>b.fee-a.fee);
+  else if(so==='margin')filtered.sort((a,b)=>a._risk.fcastMargin-b._risk.fcastMargin);
+  renderTable();
+}
+
+function renderTable(){
+  const tbody=document.getElementById('tbl-body');
+  tbody.innerHTML='';
+  filtered.forEach(p=>{
+    const r=p._risk,rl=rm(r.level);
+    const burn=Math.min(r.burnRate||0,100);
+    const bc=burn>90?'#b91c1c':burn>60?'#d97706':'#3b72f0';
+    const mc=r.fcastMargin>0&&r.fcastMargin<TARGET&&p.status!=='Completed'?'#b91c1c':r.fcastMargin>TARGET?'#2e7d32':'#aaa';
+    const ml=r.fcastMargin>0?r.fcastMargin.toFixed(1)+'%':'—';
+    const tr=document.createElement('tr');
+    if(activeId===p.projectId)tr.classList.add('sel');
+    const nm=p.projectName.length>36?p.projectName.slice(0,34)+'…':p.projectName;
+    tr.innerHTML=`<td title="${p.projectName}" style="font-size:11px">${nm}</td><td><span class="pill p-n" style="font-size:10px">${p.status}</span></td><td><span class="pill ${rl.cls}">${rl.label}</span></td><td><div class="bar-t"><div class="bar-f" style="width:${burn}%;background:${bc}"></div></div><span style="font-size:10px;color:#888">${Math.round(burn)}%</span></td><td style="color:${mc};font-weight:600">${ml}</td><td style="font-size:11px">$${((p.fee||0)/1000).toFixed(0)}k</td>`;
+    tr.onclick=()=>showDetail(p,tr);
+    tbody.appendChild(tr);
+  });
+}
+
+function showDetail(p,tr){
+  if(activeRow)activeRow.classList.remove('sel');
+  tr.classList.add('sel');activeRow=tr;activeId=p.projectId;
+  const r=p._risk,rl=rm(r.level);
+  const sigHtml=r.signals.map(s=>{
+    const cls=s.type==='danger'?'sig-d':s.type==='warn'?'sig-w':'sig-o';
+    const ico=s.type==='danger'?'⚠':s.type==='warn'?'◎':'✓';
+    return`<div class="sig ${cls}"><span class="sig-icon">${ico}</span><span>${s.msg}</span></div>`;
+  }).join('');
+
+  // Scenario Calculation
+  const allocH = r.allocatedHours || 0;
+  const maxH = Math.max(p.budgetedHours || 1, r.eac || 1, allocH || 1);
+  const budgetPct = Math.round((p.budgetedHours / maxH) * 100);
+  const eacPct = Math.round((r.eac / maxH) * 100);
+  const allocPct = Math.round((allocH / maxH) * 100);
+
+  const targetMargin = window.targetMargin || TARGET;
+  let allocMargin = 0;
+  if (p.contractType === 'FIXED_FEE') {
+    const costAtAlloc = allocH * (r.hourlyCost || 100);
+    allocMargin = p.fee > 0 ? ((p.fee - costAtAlloc) / p.fee) * 100 : 0;
+  } else if (p.contractType === 'TIME_AND_MATERIAL') {
+    const costAtAlloc = allocH * (r.hourlyCost || 100);
+    const revAtAlloc = allocH * (r.hourlyRate || 150);
+    allocMargin = revAtAlloc > 0 ? ((revAtAlloc - costAtAlloc) / revAtAlloc) * 100 : 0;
+  }
+
+  document.getElementById('detail-panel').innerHTML=`
+    <div class="detail">
+      <div class="d-hdr"><span class="d-title">${p.customer} — ${(p.projectName.split(' - ')[1])||p.projectName}</span><span class="pill ${rl.cls}">${rl.label}</span></div>
+      <div class="meta-r">
+        <span>Contract <b>${p.contractType}</b></span>
+        <span>Budget <b>${p.budgetedHours||0}h</b></span>
+        <span>EAC <b>${Math.round(r.eac||0)}h</b></span>
+        <span>Fee <b>$${((p.fee||0)/1000).toFixed(0)}k</b></span>
+        <span>Margin fcst <b style="color:${r.fcastMargin<targetMargin&&r.projRev>0?'#b91c1c':'#2e7d32'}">${r.projRev>0?r.fcastMargin.toFixed(1)+'%':'—'}</b></span>
+        <span>Progress <b>${p.progressPct||0}%</b></span>
+      </div>
+      <div class="sig-list">${sigHtml}</div>
+      <div class="ai-box">
+        <div class="ai-lbl">&#x2728; Nitro AI — margin brief</div>
+        <div class="ai-txt ai-dim" id="ai-out">Analysing project signals…</div>
+        <div class="btns">
+          <button class="btn" onclick="prefillAndSubmitQuery('Give me 3 concrete actions to protect margin on ${esc(p.projectName)} — budget ${p.budgetedHours}h, EAC ${Math.round(r.eac)}h, forecast margin ${r.fcastMargin.toFixed(1)}%')">Actions to protect margin ↗</button>
+          <button class="btn" onclick="prefillAndSubmitQuery('Model a 30% hours overrun on ${esc(p.projectName)} with fixed fee $${p.fee}. Show P&L impact.')">Model overrun ↗</button>
+        </div>
+
+        <div class="ai-query-section" style="margin-top: 12px; border-top: 1px solid #f0f0ec; padding-top: 10px;">
+          <div class="ai-lbl">💬 Ask Claude Custom Query</div>
+          <div class="ai-input-group" style="display: flex; gap: 6px; margin-top: 6px;">
+            <input type="text" id="ai-custom-prompt" placeholder="Type a custom question or choose a quick action above..." style="flex: 1; font-size: 11px; padding: 6px 10px; border-radius: 6px; border: 1px solid #e0e0da; background: #fff;" />
+            <button class="btn btn-p" onclick="submitCustomQuery()" id="ai-query-submit-btn" style="background: #3b72f0; color: #fff; border-color: #3b72f0; font-weight: 600; padding: 5px 12px; border-radius: 6px; cursor: pointer;">Ask AI</button>
+          </div>
+          <div class="ai-response-container" id="ai-query-response-container" style="display: none; font-size: 11px; line-height: 1.5; color: #333; background: #f5f8ff; border-radius: 7px; padding: 8px 10px; border: 1px solid #c7d7fd; margin-top: 8px;">
+            <div class="ai-response-title" style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: #3b72f0; margin-bottom: 4px; letter-spacing: .05em;">AI Response</div>
+            <div class="ai-response-text" id="ai-query-response-text" style="white-space: pre-wrap;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="graph-section" style="margin-top: 14px; border-top: 1px solid #f0f0ec; padding-top: 12px;">
+        <div class="ai-lbl">📊 Scenario Graphical Comparison</div>
+        <div class="scenarios-grid" style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px;">
+          
+          <!-- Scenario 1: Hours Comparison -->
+          <div class="scenario-chart-card" style="background: #fafaf8; border-radius: 8px; padding: 10px; border: 1px solid #e8e8e5;">
+            <div style="font-weight: 600; font-size: 11px; color: #444; margin-bottom: 8px; display: flex; justify-content: space-between;">
+              <span>Hours Scenario comparison</span>
+              <span style="color: #888; font-weight: normal; font-size: 10px;">Budget vs EAC vs Allocation</span>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Budget -->
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 2px;">
+                  <span style="color: #666;">Budgeted Hours</span>
+                  <span style="font-weight: 600;">${p.budgetedHours}h</span>
+                </div>
+                <div style="height: 6px; background: #e8e8e5; border-radius: 3px; overflow: hidden; position: relative;">
+                  <div style="height: 100%; width: ${budgetPct}%; background: #3b72f0; border-radius: 3px;"></div>
+                </div>
+              </div>
+              <!-- EAC -->
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 2px;">
+                  <span style="color: #666;">Estimate at Completion (EAC)</span>
+                  <span style="font-weight: 600; color: ${r.eac > p.budgetedHours ? '#b91c1c' : '#2e7d32'};">${Math.round(r.eac)}h (${Math.round((r.eac / (p.budgetedHours || 1)) * 100)}%)</span>
+                </div>
+                <div style="height: 6px; background: #e8e8e5; border-radius: 3px; overflow: hidden; position: relative;">
+                  <div style="height: 100%; width: ${eacPct}%; background: ${r.eac > p.budgetedHours ? '#d97706' : '#2e7d32'}; border-radius: 3px;"></div>
+                </div>
+              </div>
+              <!-- Allocated -->
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 2px;">
+                  <span style="color: #666;">Allocated Hours (Max Risk)</span>
+                  <span style="font-weight: 600; color: ${allocH > p.budgetedHours ? '#b91c1c' : '#2e7d32'};">${Math.round(allocH)}h (${Math.round((allocH / (p.budgetedHours || 1)) * 100)}%)</span>
+                </div>
+                <div style="height: 6px; background: #e8e8e5; border-radius: 3px; overflow: hidden; position: relative;">
+                  <div style="height: 100%; width: ${allocPct}%; background: ${allocH > p.budgetedHours ? '#b91c1c' : '#2e7d32'}; border-radius: 3px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scenario 2: Margin Comparison -->
+          <div class="scenario-chart-card" style="background: #fafaf8; border-radius: 8px; padding: 10px; border: 1px solid #e8e8e5;">
+            <div style="font-weight: 600; font-size: 11px; color: #444; margin-bottom: 8px; display: flex; justify-content: space-between;">
+              <span>Margin Scenario comparison</span>
+              <span style="color: #888; font-weight: normal; font-size: 10px;">Target vs Forecast vs Allocated Burn</span>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Target Margin -->
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 2px;">
+                  <span style="color: #666;">Target Margin</span>
+                  <span style="font-weight: 600;">${targetMargin}%</span>
+                </div>
+                <div style="height: 6px; background: #e8e8e5; border-radius: 3px; overflow: hidden; position: relative;">
+                  <div style="height: 100%; width: ${Math.max(0, Math.min(100, targetMargin))}%; background: #2e7d32; border-radius: 3px;"></div>
+                </div>
+              </div>
+              <!-- Forecast Margin (EAC) -->
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 2px;">
+                  <span style="color: #666;">Forecast Margin (EAC)</span>
+                  <span style="font-weight: 600; color: ${r.fcastMargin < targetMargin ? '#b91c1c' : '#2e7d32'};">${r.projRev > 0 ? r.fcastMargin.toFixed(1) + '%' : '—'}</span>
+                </div>
+                <div style="height: 6px; background: #e8e8e5; border-radius: 3px; overflow: hidden; position: relative;">
+                  <div style="height: 100%; width: ${Math.max(0, Math.min(100, r.fcastMargin))}%; background: ${r.fcastMargin < targetMargin ? '#d97706' : '#2e7d32'}; border-radius: 3px;"></div>
+                </div>
+              </div>
+              <!-- Allocated Margin -->
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 2px;">
+                  <span style="color: #666;">Margin if Allocation Fully Burned</span>
+                  <span style="font-weight: 600; color: ${allocMargin < targetMargin ? '#b91c1c' : '#2e7d32'};">${r.projRev > 0 ? allocMargin.toFixed(1) + '%' : '—'}</span>
+                </div>
+                <div style="height: 6px; background: #e8e8e5; border-radius: 3px; overflow: hidden; position: relative;">
+                  <div style="height: 100%; width: ${Math.max(0, Math.min(100, allocMargin))}%; background: ${allocMargin < targetMargin ? '#b91c1c' : '#2e7d32'}; border-radius: 3px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>`;
+  callClaudeDetail(p,r);
+}
+
+function esc(s){return (s||'').replace(/'/g,"\\'");}
+
+function prefillAndSubmitQuery(promptText, suffix = '') {
+  const targetId = suffix ? `ai-custom-prompt-${suffix}` : 'ai-custom-prompt';
+  const inputEl = document.getElementById(targetId);
+  if (inputEl) {
+    inputEl.value = promptText;
+    submitCustomQuery(suffix);
+  }
+}
+
+async function submitCustomQuery(suffix = '') {
+  const promptId = suffix ? `ai-custom-prompt-${suffix}` : 'ai-custom-prompt';
+  const containerId = suffix ? `ai-query-response-container-${suffix}` : 'ai-query-response-container';
+  const textId = suffix ? `ai-query-response-text-${suffix}` : 'ai-query-response-text';
+  const btnId = suffix ? `ai-query-submit-btn-${suffix}` : 'ai-query-submit-btn';
+
+  const inputEl = document.getElementById(promptId);
+  const responseContainer = document.getElementById(containerId);
+  const responseText = document.getElementById(textId);
+  const submitBtn = document.getElementById(btnId);
+  
+  if (!inputEl || !responseContainer || !responseText || !submitBtn) return;
+  
+  const prompt = inputEl.value.trim();
+  if (!prompt) {
+    alert('Please enter a query first.');
+    return;
+  }
+
+  // Find project context
+  let projectId = '';
+  if (suffix.startsWith('gov-')) {
+    projectId = suffix.replace('gov-', '');
+  } else if (suffix.startsWith('notif-')) {
+    projectId = suffix.replace('notif-', '');
+  } else {
+    projectId = activeId;
+  }
+  
+  const p = ALL.find(proj => proj.projectId === projectId);
+  let finalPrompt = prompt;
+  if (p) {
+    const r = p._risk;
+    const signalsText = r.signals ? r.signals.map(s => s.msg).join('; ') : 'None';
+    finalPrompt = `[Project Context]
+Project Name: ${p.projectName}
+Client: ${p.customer || ''}
+Contract Type: ${p.contractType}
+Fee: $${p.fee}
+Budgeted Hours: ${p.budgetedHours}h
+EAC (Estimate at Completion): ${Math.round(r.eac || 0)}h
+Allocated Hours: ${r.allocatedHours || 0}h
+Hourly Cost: $${r.hourlyCost || 51}
+Hourly Rate: $${r.hourlyRate || 72}
+Margin Forecast: ${r.fcastMargin ? r.fcastMargin.toFixed(1) : 0}%
+Status: ${p.status}
+Recent Signals: ${signalsText}
+
+[User Query]
+${prompt}`;
+  }
+  
+  responseContainer.style.display = 'block';
+  responseText.textContent = 'Asking Claude...';
+  responseText.style.color = '#888';
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Thinking...';
+  
+  try {
+    if (!rlClient) {
+      rlClient = await window.rocketlaneApp.init();
+    }
+    const result = await rlClient.serverAction('callClaude', { prompt: finalPrompt });
+    if (!result || !result.success) {
+      throw new Error(result?.error || 'Failed to get response');
+    }
+    responseText.textContent = result.text;
+    responseText.style.color = '#333';
+  } catch (e) {
+    responseText.textContent = 'Error calling Claude: ' + e.message;
+    responseText.style.color = '#b91c1c';
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Ask AI';
+  }
+}
+
+async function callClaudeDetail(p,r){
+  const el=document.getElementById('ai-out');
+  if(!el)return;
+  const prompt=`PS margin agent. 3 sentences max, no bullets.
+Project: ${p.projectName} | ${p.contractType} | Fee $${p.fee} | Budget ${p.budgetedHours}h | EAC ${Math.round(r.eac)}h | Progress ${p.progressPct}% | Margin forecast ${r.fcastMargin.toFixed(1)}% | Target ${TARGET}%
+Signals: ${r.signals.map(s=>s.msg).join('; ')}
+S1: risk status. S2: biggest threat. S3: one PM action this week.`;
+  try{
+    if(!rlClient){rlClient=await window.rocketlaneApp.init();}
+    const result=await rlClient.serverAction('callClaude',{prompt});
+    if(!result||!result.success){throw new Error(result?.error||'Failed to get response');}
+    el.textContent=result.text;el.classList.remove('ai-dim');
+  }catch(e){el.textContent='Claude API unavailable: '+e.message;el.classList.remove('ai-dim');}
+}
+
+function getPlaybook(p,r){
+  const acts=[];
+  if(r.level==='critical'){
+    acts.push({n:'n-r',t:'Immediate scope review',when:'Immediate',d:`Allocated vs ${p.budgetedHours}h budget — convene PM and delivery lead today. Issue change order before next sprint.`});
+    acts.push({n:'n-r',t:'Escalate to delivery director',when:'48 hours',d:`EAC ${Math.round(r.eac)}h is ${r.overrun.toFixed(0)}% over budget. Prepare scope reduction, rate increase, or fee renegotiation options.`});
+    acts.push({n:'n-r',t:'Freeze uncommitted hours',when:'Immediate',d:'Halt non-essential allocation. Only contracted deliverables continue until scope is re-agreed.'});
+    acts.push({n:'n-r',t:'Client commercial conversation',when:'This week',d:`Fee $${(p.fee/1000).toFixed(0)}k vs EAC cost $${(r.eac*HC/1000).toFixed(0)}k. Prepare impact summary — frame as proactive partnership.`});
+  }else if(r.level==='high'){
+    acts.push({n:'n-a',t:'Re-forecast and re-plan',when:'This week',d:`Margin ${r.fcastMargin.toFixed(1)}% below ${TARGET}% target. Run replanning session — defer low-priority tasks, accelerate billable deliverables.`});
+    acts.push({n:'n-a',t:'Unblock schedule slippage',when:'48 hours',d:`${r.velGap.toFixed(0)}% gap between elapsed time and progress. Identify top 3 blockers in next standup. Update Rocketlane tasks.`});
+    acts.push({n:'n-a',t:'Weekly margin check-in',when:'Recurring',d:'Add 15-min margin review to weekly PM cadence. Track tracked vs budgeted hours and billable ratio weekly.'});
+    acts.push({n:'n-a',t:'Stakeholder alignment call',when:'This week',d:'Re-confirm scope and timeline with client. Surface risks proactively. Document agreed boundaries in Rocketlane.'});
+  }else{
+    acts.push({n:'n-t',t:'Review task dependencies',when:'This week',d:`Velocity gap ${r.velGap.toFixed(0)}% suggests blockers. Map dependencies in Rocketlane and reassign stuck tasks.`});
+    acts.push({n:'n-t',t:'Improve billable ratio',when:'This week',d:`Billable ratio ${r.billR.toFixed(0)}%. Review time entry codes — some non-billable may qualify. Ensure daily time logging.`});
+    acts.push({n:'n-t',t:'Bi-weekly burn rate review',when:'Recurring',d:'Check hours consumed vs progress at 25%, 50%, 75% milestones. Catch drift early.'});
+    acts.push({n:'n-t',t:'Document scope boundaries',when:'Next sprint',d:'Clarify acceptance criteria for all open tasks in Rocketlane. Prevents scope creep from ambiguity.'});
+  }
+  return acts;
+}
+
+function buildGovernance(){
+  const crit=ALL.filter(p=>p._risk.level==='critical');
+  const high=ALL.filter(p=>p._risk.level==='high');
+  const med=ALL.filter(p=>p._risk.level==='medium');
+  let html='';
+  function sec(projs,title,ico,nbCls){
+    if(!projs.length)return`<div class="gov-s"><div class="gov-ttl">${ico} ${title} <span style="color:#aaa;font-weight:400">— none</span></div></div>`;
+    let cards=projs.map(p=>{
+      const r=p._risk,rl=rm(r.level);
+      const acts=getPlaybook(p,r);
+      const sigs=r.signals.map(s=>{const cls=s.type==='danger'?'sig-d':s.type==='warn'?'sig-w':'sig-o';const ico=s.type==='danger'?'⚠':s.type==='warn'?'◎':'✓';return`<div class="sig ${cls}" style="margin-bottom:4px"><span class="sig-icon">${ico}</span><span>${s.msg}</span></div>`;}).join('');
+      const actHtml=acts.map((a,i)=>`<div class="act-item"><div class="act-n ${a.n}">${i+1}</div><div><div class="act-body"><b>${a.t}</b><span class="act-when">${a.when}</span></div><div class="act-desc">${a.d}</div></div></div>`).join('');
+      const notifTxt=r.level==='critical'?`&#x1F6A8; Critical — fee $${(p.fee/1000).toFixed(0)}k at risk. EAC cost $${(r.eac*HC/1000).toFixed(0)}k vs budget ${p.budgetedHours}h. Immediate leadership action required.`:`&#x26A0;&#xFE0F; High risk — forecast margin ${r.fcastMargin.toFixed(1)}% below ${TARGET}% target. PM review and replanning required this week.`;
+      const nm=p.projectName.length>44?p.projectName.slice(0,42)+'…':p.projectName;
+      return`<div class="ac"><div class="ac-hdr" onclick="toggleAc(this)"><div class="ac-left"><span class="pill ${rl.cls}">${rl.label}</span><span class="ac-name">${nm}</span></div><div style="display:flex;align-items:center;gap:8px"><span class="ac-sub">$${(p.fee/1000).toFixed(0)}k · Margin ${r.fcastMargin>0?r.fcastMargin.toFixed(1)+'%':'—'}</span><span class="chev">&#x25BE;</span></div></div>
+      <div class="ac-body"><div class="notif-box ${nbCls}"><div class="nb-lbl">${r.level==='critical'?'Critical alert':'High risk alert'}</div>${notifTxt}</div>
+      <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Signals</div>${sigs}
+      <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin:10px 0 6px">Actions</div><div class="act-list">${actHtml}</div>
+      <div class="gov-ai"><div class="ai-lbl">&#x2728; Nitro AI — governance brief</div><div class="gov-ai-txt ai-dim" id="gov-ai-${p.projectId}">Generating brief…</div>
+      <div class="btns" style="margin-top:7px">
+        <button class="btn" onclick="prefillAndSubmitQuery('Draft a stakeholder escalation email for ${esc(p.projectName)} — ${r.level} risk, fee $${(p.fee/1000).toFixed(0)}k, margin ${r.fcastMargin.toFixed(1)}%', 'gov-${p.projectId}')">Draft escalation email ↗</button>
+        <button class="btn" onclick="prefillAndSubmitQuery('Change order guidance for ${esc(p.projectName)} given scope expansion', 'gov-${p.projectId}')">Change order guidance ↗</button>
+      </div>
+      
+      <div class="ai-query-section" style="margin-top: 12px; border-top: 1px solid #f0f0ec; padding-top: 10px;">
+        <div class="ai-lbl" style="font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: .04em;">💬 Ask Claude Custom Query</div>
+        <div class="ai-input-group" style="display: flex; gap: 6px; margin-top: 6px;">
+          <input type="text" id="ai-custom-prompt-gov-${p.projectId}" placeholder="Type a custom question or choose a quick action above..." style="flex: 1; font-size: 11px; padding: 6px 10px; border-radius: 6px; border: 1px solid #e0e0da; background: #fff;" />
+          <button class="btn btn-p" onclick="submitCustomQuery('gov-${p.projectId}')" id="ai-query-submit-btn-gov-${p.projectId}" style="background: #3b72f0; color: #fff; border-color: #3b72f0; font-weight: 600; padding: 5px 12px; border-radius: 6px; cursor: pointer;">Ask AI</button>
+        </div>
+        <div class="ai-response-container" id="ai-query-response-container-gov-${p.projectId}" style="display: none; font-size: 11px; line-height: 1.5; color: #333; background: #f5f8ff; border-radius: 7px; padding: 8px 10px; border: 1px solid #c7d7fd; margin-top: 8px;">
+          <div class="ai-response-title" style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: #3b72f0; margin-bottom: 4px; letter-spacing: .05em;">AI Response</div>
+          <div class="ai-response-text" id="ai-query-response-text-gov-${p.projectId}" style="white-space: pre-wrap;"></div>
+        </div>
+      </div>
+      </div></div></div>`;
+    }).join('');
+    const isCrit = title.toLowerCase().includes('critical') || (projs.length && projs[0]._risk.level === 'critical');
+    return`<div class="gov-s"><div class="gov-ttl">${ico} ${title} <span class="tab-ct ${isCrit?'ct-red':'ct-amb'}">${projs.length}</span></div>${cards}</div>`;
+  }
+  html+=sec(crit,'Critical — immediate action','&#x1F6A8;','nb-c');
+  html+=sec(high,'High risk — action this week','&#x26A0;&#xFE0F;','nb-h');
+  html+=sec(med,'Medium risk — prevent escalation','&#x1F4CA;','');
+  document.getElementById('gov-content').innerHTML=html||'<div class="loading">No governance issues detected.</div>';
+  ALL.filter(p=>['critical','high','medium'].includes(p._risk.level)).forEach(p=>callGovAI(p));
+}
+
+function toggleAc(hdr){
+  const body=hdr.nextElementSibling,chev=hdr.querySelector('.chev');
+  const open=body.classList.toggle('open');
+  chev.classList.toggle('open',open);
+}
+
+async function callGovAI(p){
+  const el=document.getElementById(`gov-ai-${p.projectId}`);
+  if(!el)return;
+  const r=p._risk;
+  const prompt=`PS governance agent. 2 sentences, no bullets.
+Project: ${p.projectName} | ${r.level.toUpperCase()} | ${p.contractType} | Fee $${p.fee} | Budget ${p.budgetedHours}h | EAC ${Math.round(r.eac)}h | Overrun ${r.overrun.toFixed(0)}% | Margin ${r.fcastMargin.toFixed(1)}%
+Signals: ${r.signals.map(s=>s.msg).join('; ')}
+S1: governance verdict for delivery director. S2: most important PM action in next 5 days. Be blunt.`;
+  try{
+    if(!rlClient){rlClient=await window.rocketlaneApp.init();}
+    const result=await rlClient.serverAction('callClaude',{prompt});
+    if(!result||!result.success){throw new Error(result?.error||'Failed to get response');}
+    el.textContent=result.text;el.classList.remove('ai-dim');
+  }catch(e){el.textContent='Claude API unavailable: '+e.message;el.classList.remove('ai-dim');}
+}
+
+function buildNotifications(){
+  const feed=document.getElementById('nf-feed');
+  const alertable=ALL.filter(p=>['critical','high'].includes(p._risk.level)).sort((a,b)=>RANK[b._risk.level]-RANK[a._risk.level]);
+  if(!alertable.length){feed.innerHTML='<div class="loading" style="color:#2e7d32">&#x2713; All projects tracking within thresholds — no active alerts.</div>';return;}
+  feed.innerHTML='';
+  alertable.forEach(p=>{
+    const r=p._risk,rl=rm(r.level);
+    const stripCls=r.level==='critical'?'nf-sc':'nf-sh';
+    const ico=r.level==='critical'?'&#x1F6A8;':'&#x26A0;&#xFE0F;';
+    let msg=r.level==='critical'?`Critical margin risk: EAC cost $${(r.eac*HC/1000).toFixed(0)}k vs fee $${(p.fee/1000).toFixed(0)}k. Immediate leadership escalation required.`:`High risk: forecast margin ${r.fcastMargin.toFixed(1)}% below ${TARGET}% target. PM review and replanning required this week.`;
+    const timing=r.level==='critical'?'Immediate action required':'Action required this week';
+    const nm=p.projectName.length>46?p.projectName.slice(0,44)+'…':p.projectName;
+    const div=document.createElement('div');
+    div.className='nf-item';
+    div.innerHTML=`<div class="nf-strip ${stripCls}"><span class="nf-ico">${ico}</span><div class="nf-cnt"><div class="nf-proj"><span class="pill ${rl.cls}" style="margin-right:6px">${rl.label}</span>${nm}</div><div class="nf-msg">${msg}</div><div class="nf-time">&#x23F0; ${timing} &middot; $${(p.fee/1000).toFixed(0)}k &middot; ${p.customer}</div></div></div>
+    <div class="nf-acts" style="display: block; padding: 10px 14px; background: #f8f8f7; border-top: 1px solid #f0f0ec;">
+      <div class="btns" style="margin-top: 0; margin-bottom: 8px;">
+        <button class="nf-btn nf-btn-p" onclick="prefillAndSubmitQuery('5-point action plan to resolve ${r.level} margin risk on ${esc(p.projectName)}', 'notif-${p.projectId}')">Get action plan ↗</button>
+        <button class="nf-btn" onclick="prefillAndSubmitQuery('Draft alert email for ${esc(p.projectName)} — margin risk and next steps', 'notif-${p.projectId}')">Draft alert email ↗</button>
+      </div>
+      
+      <div class="ai-query-section" style="border-top: 1px solid #e8e8e5; padding-top: 8px; margin-top: 8px;">
+        <div class="ai-lbl" style="font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: .04em;">💬 Ask Claude Custom Query</div>
+        <div class="ai-input-group" style="display: flex; gap: 6px; margin-top: 6px;">
+          <input type="text" id="ai-custom-prompt-notif-${p.projectId}" placeholder="Type a custom question or choose a quick action above..." style="flex: 1; font-size: 11px; padding: 6px 10px; border-radius: 6px; border: 1px solid #e0e0da; background: #fff; outline: none;" />
+          <button class="btn btn-p" onclick="submitCustomQuery('notif-${p.projectId}')" id="ai-query-submit-btn-notif-${p.projectId}" style="background: #3b72f0; color: #fff; border-color: #3b72f0; font-weight: 600; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 11px;">Ask AI</button>
+        </div>
+        <div class="ai-response-container" id="ai-query-response-container-notif-${p.projectId}" style="display: none; font-size: 11px; line-height: 1.5; color: #333; background: #f5f8ff; border-radius: 7px; padding: 8px 10px; border: 1px solid #c7d7fd; margin-top: 8px;">
+          <div class="ai-response-title" style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: #3b72f0; margin-bottom: 4px; letter-spacing: .05em;">AI Response</div>
+          <div class="ai-response-text" id="ai-query-response-text-notif-${p.projectId}" style="white-space: pre-wrap;"></div>
+        </div>
+      </div>
+    </div>`;
+    feed.appendChild(div);
+  });
+}
+
+function switchTab(id,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('pane-'+id).classList.add('active');
+}
+
+function askClaude(prompt){
+  if(window.rocketlaneApp&&window.rocketlaneApp.openChat){
+    window.rocketlaneApp.openChat(prompt);
+  }else{
+    alert('Prompt: '+prompt);
+  }
+}
+
+async function loadData(){
+  document.getElementById('kpis').innerHTML='<div class="loading">Loading portfolio...</div>';
+  try{
+    const app=await window.rocketlaneApp.init();
+    rlClient=app;
+    const result=await app.serverAction('getMarginForecast',{});
+    if(!result||!result.success){throw new Error(result?.error||'Server action failed');}
+    ALL=result.projects||[];
+    buildKPIs(result);
+    applyFilters();
+    buildGovernance();
+    buildNotifications();
+  }catch(e){
+    document.getElementById('kpis').innerHTML=`<div class="err">&#x26A0; Failed to load data: ${e.message}. Check Rocketlane connection and retry.</div>`;
+  }
+}
+
+window.rocketlaneApp.init().then(()=>loadData());
+</script>
+</body>
+</html>
